@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <header>
+        <div class="logo"></div>
+        <h2 class="summary">PRICE LIST<span></span></h2>
+        <div class="search">
+            <input id="Search" type="text" placeholder="Search...">
+            <span id="emj" class="emj" onclick=" Search() ">🔎</span>
+        </div>
+
+    </header>
+    <br>
+    <br>
+    <br>
+    <div id="order-table">
+
+        <table>
+            <thead>
+                <tr>
+                    <form action="">
+                        <th onclick="SortTable(0)">Partnumber</th>
+                        <th onclick="SortTable(1)">Description</th>
+                        <th onclick="SortTable(2)">Manufacturer</th>
+                        <th onclick="SortTable(3)">Stock QTY</th>
+                        <th onclick="SortTable(4)">Allow returns</th>
+                        <th onclick="SortTable(5)">Price</th>
+                        <th></th>
+                    </form>
+                </tr>
+            </thead>
+            <thead>
+                <td><input name="Partnumber" id="Partnumber" type="text" required="Mandatory value"></td>
+                <td><input name="Description" id="Description" type="text" required="Mandatory value"></td>
+                <td><input name="Manufacturer" id="Manufacturer" type="text" required="Mandatory value"></td>
+                <td><input name="QuantityOnStock" id="QuantityOnStock" type="number"></td>
+                <td><input name="AllowReturns" id="AllowReturns" type="text"></td>
+                <td><input name="PurchasePrice" id="PurchasePrice" type="number"></td>
+                <td><button onclick="ValidateInputs()" class="ButtonAdd">ADD</button></td>
+            </thead>
+
+            <tbody id="dataplace">
+
+            </tbody>
+            <tbody id="dataplace1">
+
+            </tbody>
+
+        </table>
+    </div>
+    <div>
+        <div class="content justify-center">
+            <div id="step">
+                <button class="Delete" onclick="Delete()">Remove checked</button>
+            </div>
+            <div id="step">
+                <button class="restore" onclick="Clear()">Clear All</button>
+            </div>
+            <div>
+                <button class="restore" onclick="Clear(), GoodsTable(), GoodsSum()">Restore</button>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+<script>
+    var Partnumber = '';
+    var Description = '';
+    var Manufacturer = '';
+    var QuantityOnStock;
+    var AllowReturns = '';
+    var InputedPartNumber = '';
+    var InputedQuantityOnStock;
+    var InputedPrice;
+    var PurchasePrice;
+    var HTMLtableData;
+    var ItemCheckBoxFlag;
+    var SumAfterDelete;
+    var InputString;
+    var FilteredItems;
+    var NewSumPrice = 0;
+    var Switching;
+    var ShouldSwitch;
+
+    var goods = [
+        { Partnumber: "BC807", Description: "transistor", Manufacturer: "NXP", QuantityOnStock: 5000, PurchasePrice: 0.01, AllowReturns: "N" },
+        { Partnumber: "STM32F302", Description: "microcontroller", Manufacturer: "STM", QuantityOnStock: 2500, PurchasePrice: 12.35, AllowReturns: "Y" },
+        { Partnumber: "SKKT 107/16 E", Description: "thyristor module", Manufacturer: "SEMIKRON", QuantityOnStock: 24, PurchasePrice: 7.5, AllowReturns: "Y" },
+        { Partnumber: "SKKT 162/16", Description: "thyristor module", Manufacturer: "SEMIKRON", QuantityOnStock: 12, PurchasePrice: 13.12, AllowReturns: "Y" },
+        { Partnumber: "SKKT 273/16", Description: "thyristor module", Manufacturer: "SEMIKRON", QuantityOnStock: 9, PurchasePrice: 32.25, AllowReturns: "Y" },
+        { Partnumber: "SKKT 570/16", Description: "thyristor module", Manufacturer: "SEMIKRON", QuantityOnStock: 3, PurchasePrice: 89.15, AllowReturns: "Y" },
+        { Partnumber: "BC817", Description: "transistor", Manufacturer: "NXP", QuantityOnStock: 10000, PurchasePrice: 0.011, AllowReturns: "N" },
+        { Partnumber: "0805 1R 5%", Description: "resistor", Manufacturer: "ROHM", QuantityOnStock: 20000, PurchasePrice: 0.001, AllowReturns: "N" },
+        { Partnumber: "1206 10R 5%", Description: "resistor", Manufacturer: "ROHM", QuantityOnStock: 30000, PurchasePrice: 0.002, AllowReturns: "N" },
+        { Partnumber: "C-EL 470uf 50V 5*10mm 3000H", Description: "capicitor", Manufacturer: "Yageo", QuantityOnStock: 3000, PurchasePrice: 0.05, AllowReturns: "N" }
+    ];
+    var input = document.getElementById("Search");
+    input.addEventListener("keyup", function (event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("emj").click();
+        }
+    });
+    function GoodsTable() {
+        for (var i = 0; i < goods.length; i++) {
+
+            goods[i].price = goods[i].PurchasePrice * 1.2 * 1.2 * 1.05;
+            var tableData = document.createElement("tr");
+            tableData.innerHTML =
+                "<td>"
+                + goods[i].Partnumber +
+                "</td><td>"
+                + goods[i].Description +
+                "</td><td>"
+                + goods[i].Manufacturer +
+                "</td><td>"
+                + goods[i].QuantityOnStock +
+                //"</td><td>" 
+                //    + goods[i].PurchasePrice +
+                "</td><td>"
+                + goods[i].AllowReturns +
+                "</td><td>"
+                + "$" + goods[i].price.toFixed(4) +
+                "</td><td>" +
+                "<input type='checkbox' name='ItemCheckBoxFlag' value='checked'>" +
+                "</td>";
+            document.getElementById("dataplace").appendChild(tableData);
+        }
+    }
+    function GoodsSum() {
+        var sumPrice = 0;
+        for (var i = 0; i < goods.length; i++) {
+            sumPrice += goods[i].price * goods[i].QuantityOnStock;
+        }
+        var sum = document.createElement("tr");
+        sum.innerHTML =
+            "<td style='background-color: #dbdbdb;'>"
+            +
+            "</td><td style='background-color: #dbdbdb;'>"
+            +
+            "</td><td style='background-color: #dbdbdb;'>"
+            +
+            "</td><td style='background-color: #dbdbdb;'>"
+            +
+            "</td><td style='background-color: #dbdbdb;'>"
+            +
+            "</td><td style='background-color: #dbdbdb;font-weight:bold;'>"
+            + "$" + sumPrice.toFixed(4) +
+            "</td><td style='background-color: #dbdbdb;'>"
+            +
+            "</td>";
+        document.getElementById("dataplace1").appendChild(sum);
+
+
+    }
+
+    GoodsTable();
+    GoodsSum();
+
+
+    function Delete() {
+        HTMLtableData = document.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        ItemCheckBoxFlag = document.getElementsByName("ItemCheckBoxFlag");
+
+        document.getElementById("dataplace1").innerHTML = "";
+
+
+        for (var i = HTMLtableData.length - 1; i > -1; i--) {
+            if (ItemCheckBoxFlag[i].checked == true) {
+                HTMLtableData[i].parentNode.removeChild(HTMLtableData[i]);
+            }
+            else {
+                NewSumPrice += goods[i].price * goods[i].QuantityOnStock;
+            }
+        }
+
+        SumAfterDelete = document.createElement("tr");
+        SumAfterDelete.innerHTML =
+            "<td>"
+            +
+            "</td><td>"
+            +
+            "</td><td>"
+            +
+            "</td><td>"
+            +
+            "</td><td>"
+            +
+            "</td><td>"
+            + "$" + NewSumPrice.toFixed(4) +
+            "</td><td>"
+            +
+            "</td>";
+        document.getElementById("dataplace1").appendChild(SumAfterDelete);
+    };
+
+    function Clear() {
+        document.getElementById("dataplace").innerHTML = "";
+        document.getElementById("dataplace1").innerHTML = "";
+    };
+
+    function Add() {
+
+        Partnumber = document.getElementById('Partnumber').value;
+        Description = document.getElementById('Description').value;
+        Manufacturer = document.getElementById('Manufacturer').value;
+        QuantityOnStock = document.getElementById('QuantityOnStock').value;
+        AllowReturns = document.getElementById('AllowReturns').value;
+        PurchasePrice = document.getElementById('PurchasePrice').value;
+
+        goods.push({ Partnumber: Partnumber, Description: Description, Manufacturer: Manufacturer, QuantityOnStock: QuantityOnStock, PurchasePrice: PurchasePrice, AllowReturns: AllowReturns, /*Price: Price*/ });
+
+        console.log(goods)
+        document.getElementById("dataplace1").innerHTML = "";
+
+        document.getElementById('Partnumber').value = "";
+        document.getElementById('Description').value = "";
+        document.getElementById('Manufacturer').value = "";
+        document.getElementById('QuantityOnStock').value = "";
+        document.getElementById('AllowReturns').value = "";
+        document.getElementById('PurchasePrice').value = "";
+
+    };
+
+    function ValidateInputs() {
+        InputedPartNumber = document.getElementById('Partnumber').value;
+        InputedQuantityOnStock = document.getElementById('QuantityOnStock').value;
+        InputedPrice = document.getElementById('PurchasePrice').value;
+        if (InputedPartNumber == "" || InputedQuantityOnStock == "" || InputedPrice == "") {
+            alert("please add vaulue to mandatory fields!")
+        }
+        else {
+            Add()
+            GoodsTable()
+            GoodsSum()
+        }
+    }
+
+    function Search() {
+        InputString = (document.getElementById("Search").value).toLowerCase();
+
+        FilteredItems = goods.filter((el) => {
+            var isMatch = false;
+            if (el.Partnumber.toLowerCase().indexOf(InputString) !== -1)
+                isMatch = true;
+            else if (el.Description.toLowerCase().indexOf(InputString) !== -1)
+                isMatch = true;
+            else if (el.Manufacturer.toLowerCase().indexOf(InputString) !== -1)
+                isMatch = true;
+            return isMatch
+        })
+        Clear()
+        for (var i = 0; i < FilteredItems.length; i++) {
+
+            var tableData = document.createElement("tr");
+            tableData.innerHTML =
+                "<td>"
+                + FilteredItems[i].Partnumber +
+                "</td><td>"
+                + FilteredItems[i].Description +
+                "</td><td>"
+                + FilteredItems[i].Manufacturer +
+                "</td><td>"
+                + FilteredItems[i].QuantityOnStock +
+                "</td><td>"
+                + FilteredItems[i].AllowReturns +
+                "</td><td>"
+                + "$" + FilteredItems[i].price.toFixed(4) +
+                "</td><td>" +
+                "<input type='checkbox' name='ItemCheckBoxFlag' value='checked'>" +
+                "</td>";
+            document.getElementById("dataplace").appendChild(tableData);
+        }
+        document.getElementById('Search').value = "";
+    };
+
+    function SortTable(n) {
+        var TabelData;
+        var rows;
+        var dir;
+        var SwitchCount = 0;
+        TabelData = document.getElementById("dataplace");
+        Switching = true;
+        dir = "asc";
+
+        while (Switching) {
+            Switching = false;
+            rows = TabelData.getElementsByTagName("TR");
+            for (var i = 0; i < (rows.length - 1); i++) {
+
+                ShouldSwitch = false;
+
+                var x = rows[i].getElementsByTagName("TD")[n];
+                var y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                if (dir == "asc") {
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+
+                        ShouldSwitch = true;
+                        break;
+                    }
+                } else if (dir == "desc") {
+                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+
+                        ShouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (ShouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                Switching = true;
+                SwitchCount++;
+            } else {
+                if (SwitchCount == 0 && dir == "asc") {
+                    dir = "desc";
+                    Switching = true;
+                }
+            }
+        }
+    }
+</script>
+<style>
+    @import url("https://fonts.googleapis.com/css?family=Roboto");
+
+    * {
+        margin: 0;
+        padding: 0;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+        font-family: "Roboto", sans-serif;
+    }
+
+    th {
+        cursor: pointer;
+
+    }
+
+    #step {
+        padding-right: 50px;
+    }
+
+    #pricecolor {
+        color: rgb(252, 13, 13);
+    }
+
+    button {
+        padding: 10px 15px;
+        font-size: 18px;
+        font-weight: bold;
+        border: 0;
+        border-radius: 9px;
+        margin: 10px 0;
+        background:#7f7f7f;
+        color: #fff;
+        letter-spacing: 2px;;
+        cursor: pointer;
+        box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    button:hover{
+        background-color: #afacac;
+    }
+
+    .wrapper {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+    }
+  
+    .content {
+        display: flex;
+        flex-flow: row;
+    }
+
+
+    .justify-center {
+        justify-content: center;
+    }
+
+    #order-table {
+        margin-top: 10px;
+    }
+
+    table {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        font-size: 100%;
+        font: inherit;
+        vertical-align: baseline;
+        border-collapse: collapse;
+        margin-top: 40px;
+        overflow-x: auto;
+        overflow-y: auto;
+    }
+
+    td,
+    th {
+        padding: 10px;
+        text-align: center;
+    }
+
+    thead {
+        background: #b9b9ba;
+    }
+
+    tbody td {
+        font-size: 16px;
+        color: #7f7f7f;
+        border-bottom: 1px solid #f9f9f9;
+    }
+
+    thead th {
+        color: #fff;
+        border-left: #fff;
+        font-weight: 300;
+        font-size: 22px;
+        letter-spacing: 1px;
+    }
+
+    tbody tr:hover {
+        background-color: #f6f6ec;
+    }
+
+    .summary {
+        text-align: center;
+        padding-top: 1%;
+        font-size: 26px;
+        color: rgb(128, 128, 128);
+    }
+
+    .search {
+        float: right;
+    }
+
+    #Search {
+        width: 335px;
+        height: 40px;
+        border: 1px solid rgb(150, 150, 150);
+        text-decoration: none;
+        border-radius: 25px;
+        font-size: 18px;
+        padding: 25px 25px 25px 25px;
+        color: rgb(128, 128, 128);
+    }
+
+    #Search:focus {
+        outline: none;
+        border: 2px solid rgb(128, 128, 128);
+    }
+
+    .emj {
+        padding-right: 40px;
+        margin-left: -40px;
+        position: relative;
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
+    .ButtonAdd {
+        padding: 5px 7px 5px 7px;
+        background: #f6f6ec;
+        color: #7f7f7f;
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+        font-size: 16px;
+        border-radius: 10px;
+    }
+
+    .ButtonAdd:hover {
+        border: none;
+        background: #f6f6ecb9;
+    }
+
+    #Partnumber,
+    #Description,
+    #Manufacturer,
+    #QuantityOnStock,
+    #AllowReturns,
+    #PurchasePrice {
+        height: 20px;
+        border: 1px solid rgb(150, 150, 150);
+        text-decoration: none;
+        border-radius: 5px;
+        padding: 3px 3px 3px 3px;
+        color: rgb(128, 128, 128);
+    }
+
+    #Partnumber,
+    #Description,
+    #Manufacturer,
+    #QuantityOnStock,
+    #AllowReturns,
+    #PurchasePrice:focus {
+        outline: none;
+    }
+
+    #Partnumber:focus,
+    #InputedQuantityOnStock:focus,
+    #InputedPrice:focus {
+        border: 2px solid red;
+        border-radius: 5px;
+    }
+
+
+    ::placeholder {
+        color: #DCDADA;
+        font-size: 16px;
+        letter-spacing: 2px;
+        padding: 10px 10px 10px 10px;
+    }
+</style>
+
+</html>
